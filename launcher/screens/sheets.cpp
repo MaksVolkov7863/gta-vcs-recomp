@@ -210,46 +210,78 @@ namespace screens
                 y += px(36);
 
                 // Resolution
-                ui::label(kFontSemibold, px(theme::kSmall), {r.x, y, r.w, px(20)}, theme::kDim, "WINDOW RESOLUTION");
+                ui::label(kFontSemibold, px(theme::kSmall), {r.x, y, r.w, px(20)}, theme::kDim, "WINDOW RESOLUTION (16:9 / 4:3 / ULTRA)");
                 y += px(24);
                 struct ResChoice { const char *label; int w; int h; };
-                const ResChoice resolutions[] = {
-                    {"720p 4:3", 960, 720},
-                    {"720p 16:9", 1280, 720},
+                const ResChoice resRow1[] = {
+                    {"720p", 1280, 720},
                     {"900p", 1600, 900},
                     {"1080p", 1920, 1080},
-                    {"1440p", 2560, 1440}
+                    {"1440p (2K)", 2560, 1440}
                 };
-                int resSel = -1;
-                std::vector<std::string> resLabels;
-                for (size_t i = 0; i < 5; ++i)
-                {
-                    resLabels.push_back(resolutions[i].label);
-                    if (app.gameSettings.windowWidth == resolutions[i].w && app.gameSettings.windowHeight == resolutions[i].h)
-                        resSel = int(i);
-                }
-                if (ui::segmented("#resolution-seg", {r.x, y, r.w, px(34)}, resLabels, resSel))
-                {
-                    if (resSel >= 0 && resSel < 5)
+                const ResChoice resRow2[] = {
+                    {"4K UHD", 3840, 2160},
+                    {"5K", 5120, 2880},
+                    {"6K", 6016, 3384},
+                    {"8K UHD", 7680, 4320}
+                };
+                const ResChoice resRow3[] = {
+                    {"4:3 720p", 960, 720},
+                    {"4:3 1440p", 1920, 1440},
+                    {"21:9 1080p", 2560, 1080},
+                    {"21:9 1440p", 3440, 1440},
+                    {"32:9 1440p", 5120, 1440}
+                };
+
+                auto handleResRow = [&](std::string_view idLabel, const ResChoice choices[], size_t count) {
+                    int sel = -1;
+                    std::vector<std::string> labels;
+                    for (size_t i = 0; i < count; ++i)
                     {
-                        app.gameSettings.windowWidth = resolutions[resSel].w;
-                        app.gameSettings.windowHeight = resolutions[resSel].h;
-                        app.saveGameSettings();
+                        labels.push_back(choices[i].label);
+                        if (app.gameSettings.windowWidth == choices[i].w && app.gameSettings.windowHeight == choices[i].h)
+                            sel = int(i);
                     }
-                }
-                y += px(44);
+                    if (ui::segmented(idLabel, {r.x, y, r.w, px(32)}, labels, sel))
+                    {
+                        if (sel >= 0 && size_t(sel) < count)
+                        {
+                            app.gameSettings.windowWidth = choices[sel].w;
+                            app.gameSettings.windowHeight = choices[sel].h;
+                            app.saveGameSettings();
+                        }
+                    }
+                    y += px(38);
+                };
+
+                handleResRow("#res-row1", resRow1, 4);
+                handleResRow("#res-row2", resRow2, 4);
+                handleResRow("#res-row3", resRow3, 5);
+                y += px(6);
 
                 // Aspect Ratio
                 ui::label(kFontSemibold, px(theme::kSmall), {r.x, y, r.w, px(20)}, theme::kDim, "ASPECT RATIO");
                 y += px(24);
-                const int aspects[] = {43, 169, 1610, 219, 0};
-                int aspectSel = 0;
-                for (int i = 0; i < 5; ++i)
-                    if (app.gameSettings.aspect == aspects[i])
-                        aspectSel = i;
-                if (ui::segmented("#aspect-seg", {r.x, y, r.w, px(34)}, {"4:3", "16:9", "16:10", "21:9", "Auto"}, aspectSel))
+                const int aspects1[] = {43, 54, 1610, 169};
+                int aspectSel1 = -1;
+                for (int i = 0; i < 4; ++i)
+                    if (app.gameSettings.aspect == aspects1[i])
+                        aspectSel1 = i;
+                if (ui::segmented("#aspect-seg1", {r.x, y, r.w, px(32)}, {"4:3", "5:4", "16:10", "16:9"}, aspectSel1))
                 {
-                    app.gameSettings.aspect = aspects[aspectSel];
+                    app.gameSettings.aspect = aspects1[aspectSel1];
+                    app.saveGameSettings();
+                }
+                y += px(38);
+
+                const int aspects2[] = {219, 329, 0};
+                int aspectSel2 = -1;
+                for (int i = 0; i < 3; ++i)
+                    if (app.gameSettings.aspect == aspects2[i])
+                        aspectSel2 = i;
+                if (ui::segmented("#aspect-seg2", {r.x, y, r.w, px(32)}, {"21:9 (Ultrawide)", "32:9 (Super Ultrawide)", "Auto (Window)"}, aspectSel2))
+                {
+                    app.gameSettings.aspect = aspects2[aspectSel2];
                     app.saveGameSettings();
                 }
                 y += px(44);
@@ -257,14 +289,26 @@ namespace screens
                 // Internal Render Scale
                 ui::label(kFontSemibold, px(theme::kSmall), {r.x, y, r.w, px(20)}, theme::kDim, "INTERNAL RENDER SCALE");
                 y += px(24);
-                const int scales[] = {1, 2, 3, 4, 0};
-                int scaleSel = 0;
-                for (int i = 0; i < 5; ++i)
-                    if (app.gameSettings.scale == scales[i])
-                        scaleSel = i;
-                if (ui::segmented("#scale-seg", {r.x, y, r.w, px(34)}, {"1x (PS2)", "2x", "3x", "4x", "Window"}, scaleSel))
+                const int scales1[] = {1, 2, 3, 4};
+                int scaleSel1 = -1;
+                for (int i = 0; i < 4; ++i)
+                    if (app.gameSettings.scale == scales1[i])
+                        scaleSel1 = i;
+                if (ui::segmented("#scale-seg1", {r.x, y, r.w, px(32)}, {"1x (PS2)", "2x", "3x", "4x"}, scaleSel1))
                 {
-                    app.gameSettings.scale = scales[scaleSel];
+                    app.gameSettings.scale = scales1[scaleSel1];
+                    app.saveGameSettings();
+                }
+                y += px(38);
+
+                const int scales2[] = {6, 8, 10, 0};
+                int scaleSel2 = -1;
+                for (int i = 0; i < 4; ++i)
+                    if (app.gameSettings.scale == scales2[i])
+                        scaleSel2 = i;
+                if (ui::segmented("#scale-seg2", {r.x, y, r.w, px(32)}, {"6x", "8x", "10x", "Match Window"}, scaleSel2))
+                {
+                    app.gameSettings.scale = scales2[scaleSel2];
                     app.saveGameSettings();
                 }
                 y += px(44);
